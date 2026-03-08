@@ -52,7 +52,7 @@ st.markdown("La intensidad del color representa la acumulación térmica en infr
 view_state = pdk.ViewState(
     latitude=data['lat'].mean(),
     longitude=data['lon'].mean(),
-    zoom=12,
+    zoom=6,
     pitch=0
 )
 
@@ -84,7 +84,7 @@ st.divider()
 col_left, col_right = st.columns(2)
 
 with col_left:
-    st.subheader("📚 Glosario de Parámetros Analizados")
+    st.subheader(" Glosario de Parámetros Analizados")
     st.markdown("""
     * **LST (Land Surface Temperature):** Temperatura real de los materiales (asfalto, tejados). Es la variable clave para identificar la retención térmica de una ciudad.
     * **Albedo Urbano:** Mide la fracción de radiación solar que una superficie refleja. Materiales oscuros tienen albedo bajo y contribuyen activamente al calentamiento.
@@ -92,7 +92,7 @@ with col_left:
     """)
 
 with col_right:
-    st.subheader("⚠️ Riesgos de la Falta de Monitorización")
+    st.subheader(" Riesgos de la Falta de Monitorización")
     st.warning("""
     1. **Salud Pública:** Incremento en la mortalidad y morbilidad por eventos de calor extremo no mitigados.
     2. **Ineficiencia Energética:** Sobrecostes masivos en refrigeración debido al efecto de 'noche tropical' en edificios.
