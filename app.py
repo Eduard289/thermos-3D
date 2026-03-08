@@ -1,103 +1,83 @@
 import streamlit as st
 import pydeck as pdk
+import pandas as pd
 from engine import UrbanDataEngine
 
-# 1. Configuración de la interfaz
-st.set_page_config(
-    page_title="Urban Resilience Lab | Consultancy Tool",
-    page_icon="🏙️",
-    layout="wide"
-)
+st.set_page_config(page_title="Thermos-3D | Consultoría", layout="wide")
 
-# Inicializar el motor de datos
-@st.cache_resource
-def load_engine():
-    return UrbanDataEngine()
+engine = UrbanDataEngine()
 
-engine = load_engine()
+# --- SIDEBAR ---
+st.sidebar.title("Configuración")
+city_list = sorted(list(engine.city_coords.keys()))
+selected_city = st.sidebar.selectbox("Ciudad Española", city_list)
+points = st.sidebar.slider("Densidad de datos", 500, 5000, 2000)
 
-# 2. Sidebar - Control de parámetros
-st.sidebar.image("https://img.icons8.com/fluency/96/city.png", width=80)
-st.sidebar.title("Configuración de Análisis")
+data = engine.generate_thermal_data(selected_city, n_points=points)
+m = engine.get_metrics(data)
 
-selected_city = st.sidebar.selectbox(
-    "Seleccione la ciudad para análisis:",
-    ["Madrid", "Barcelona", "Sevilla", "Valencia"]
-)
-
-temp_threshold = st.sidebar.slider(
-    "Umbral de Alerta Térmica (°C)",
-    min_value=30,
-    max_value=50,
-    value=40
-)
-
-# 3. Procesamiento de Datos
-data = engine.generate_thermal_data(selected_city)
-metrics = engine.get_consultancy_metrics(data)
-
-# 4. Cabecera del Dashboard
-st.title(f"📊 Informe de Resiliencia: {selected_city}")
-st.markdown(f"""
-Este panel analiza la **Isla de Calor Urbana (UHI)** en {selected_city}. 
-Utiliza datos sintéticos calibrados para demostrar capacidades de análisis geoespacial.
-""")
-
-# 5. Visualización de KPIs (Métricas clave)
+# --- HEADER ---
+st.title(f"🏙️ Análisis de Estrés Térmico: {selected_city}")
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Temp. Media", f"{metrics['avg_temp']:.1f} °C")
-c2.metric("Pico Máximo", f"{metrics['max_temp']:.1f} °C", delta="Crítico", delta_color="inverse")
-c3.metric("Zonas de Riesgo", metrics['hotspot_count'], help="Áreas por encima del umbral")
-c4.metric("Índice de Vegetación", f"{metrics['vegetation_index']:.2f}", delta="-4%", delta_color="inverse")
+c1.metric("Temp. Media", f"{m['avg']:.1f} °C")
+c2.metric("Pico Máximo", f"{m['max']:.1f} °C")
+c3.metric("Zonas Críticas", m['risk'])
+c4.metric("Índice Vegetación", f"{m['veg']:.2f}")
 
-# 6. Mapa 3D de Calor (Pydeck)
-st.subheader("Visualización Espacial de Riesgo Térmico")
+# --- MAPA MEJORADO (HEATMAP) ---
+st.subheader("Mapa de Calor de Superficie (LST)")
+st.markdown("El mapa muestra la intensidad térmica. Los colores **rojos intensos** indican zonas de asfalto sin refrigeración.")
 
-# Definir la capa del mapa
+# Usamos HeatmapLayer: es mucho más visual y profesional para consultoría
+view_state = pdk.ViewState(latitude=data['lat'].mean(), longitude=data['lon'].mean(), zoom=12, pitch=0)
+
 layer = pdk.Layer(
-    "HexagonLayer",
+    "HeatmapLayer",
     data,
     get_position=['lon', 'lat'],
-    radius=120,
-    elevation_scale=40,
-    elevation_range=[0, 1000],
-    pickable=True,
-    extruded=True,
-    # Color dinámico basado en temperatura (de verde a rojo)
-    get_fill_color="[255, (1 - (temperature - 25) / 25) * 255, 0, 160]",
+    get_weight="temperature",
+    radius_pixels=60,
+    intensity=1,
+    threshold=0.05,
+    color_range=[
+        [255, 255, 178], [254, 217, 118], [254, 178, 76],
+        [253, 141, 60], [240, 59, 32], [189, 0, 38]
+    ]
 )
 
-# Estado inicial de la cámara
-view_state = pdk.ViewState(
-    latitude=data['lat'].mean(),
-    longitude=data['lon'].mean(),
-    zoom=12,
-    pitch=45,
-)
+st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view_state))
 
-# Renderizar el mapa
-st.pydeck_chart(pdk.Deck(
-    map_style='mapbox://styles/mapbox/dark-v10',
-    initial_view_state=view_state,
-    layers=[layer],
-    tooltip={"text": "Temperatura estimada: {elevationValue}°C"}
-))
-
-# 7. Insights de Consultoría
+# --- NUEVA GRÁFICA DE PARÁMETROS ---
 st.divider()
-with st.expander("📝 Ver Recomendaciones Estratégicas", expanded=True):
-    col_left, col_right = st.columns(2)
-    
-    with col_left:
-        st.markdown("### 🟢 Soluciones Basadas en la Naturaleza")
-        st.write("""
-        - **Micro-parques:** Implementación de zonas verdes en los hotspots detectados.
-        - **Techos Verdes:** Incentivos fiscales para edificios comerciales con cobertura vegetal.
-        """)
-        
-    with col_right:
-        st.markdown("### 🏗️ Infraestructura y Urbanismo")
-        st.write("""
-        - **Albedo Urbano:** Uso de materiales reflectantes en pavimentos.
-        - **Corredores de Viento:** Restricción de altura en áreas de flujo de aire crítico.
-        """)
+st.subheader("Distribución de Rangos Térmicos")
+# Creamos categorías para que el usuario sepa "hasta qué parámetro llega"
+bins = [0, 30, 35, 40, 45, 100]
+labels = ['Templado (<30)', 'Cálido (30-35)', 'Aviso (35-40)', 'Peligro (40-45)', 'Extremo (>45)']
+data['Rango'] = pd.cut(data['temperature'], bins=bins, labels=labels)
+dist_data = data['Rango'].value_counts().reindex(labels)
+
+st.bar_chart(dist_data)
+
+# --- FOOTER ---
+st.divider()
+st.markdown(
+    """
+    <style>
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #0e1117;
+        color: #fafafa;
+        text-align: center;
+        padding: 10px;
+        font-family: sans-serif;
+    }
+    </style>
+    <div class="footer">
+        <p>Desarrollado por <b>Jose Luis Asenjo</b> | Thermos-3D © 2026</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
