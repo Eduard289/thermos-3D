@@ -39,26 +39,18 @@ class UrbanDataEngine:
         }
 
     def generate_thermal_data(self, city_name, n_points=2500):
-        """
-        Genera un dataset sintético basado en la ubicación real de la ciudad.
-        """
         if city_name not in self.city_coords:
             return pd.DataFrame()
 
         center = self.city_coords[city_name]
         
-        # Dispersión geográfica (simulando área metropolitana)
         lats = np.random.normal(center[0], 0.028, n_points)
         lons = np.random.normal(center[1], 0.028, n_points)
         
-        # Cálculo de temperatura (LST): Más calor en el centro por densidad de asfalto
         dist_from_center = np.sqrt((lats - center[0])**2 + (lons - center[1])**2)
-        # Base de 48°C en el centro, bajando según la distancia
         temp = 48 - (dist_from_center * 135) + np.random.normal(0, 1.8, n_points)
-        temp = np.clip(temp, 21, 53) # Límites realistas
+        temp = np.clip(temp, 21, 53)
 
-        # Parámetro Albedo: Capacidad de reflexión (0.1 asfalto oscuro, 0.4 zonas claras/verdes)
-        # Inversamente proporcional a la temperatura
         albedo = 0.55 - (temp / 110) + np.random.normal(0, 0.04, n_points)
         albedo = np.clip(albedo, 0.08, 0.45)
 
@@ -70,23 +62,15 @@ class UrbanDataEngine:
         })
 
     def get_metrics(self, df):
-        """
-        Calcula KPIs estratégicos para el informe de consultoría.
-        """
         if df.empty:
-            return None
+            return {
+                "avg": 0, "max": 0, "risk": 0, "albedo_med": 0, "energy_hike": 0
+            }
 
         avg_temp = df['temperature'].mean()
         max_temp = df['temperature'].max()
-        
-        # Zonas Críticas: Puntos que superan los 42°C de superficie
         risk_zones = len(df[df['temperature'] > 42])
-        
-        # Albedo Medio de la ciudad
         avg_albedo = df['albedo'].mean()
-
-        # Impacto Energético: Estimación de sobrecoste en refrigeración 
-        # (+3.5% de consumo por cada grado por encima de 25°C de media)
         energy_hike = max(0, (avg_temp - 25) * 3.5)
 
         return {
