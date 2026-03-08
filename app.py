@@ -11,14 +11,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Inicializar motor de datos
-@st.cache_resource
-def load_engine():
-    return UrbanDataEngine()
+# 2. INICIALIZAR MOTOR DE DATOS (Sin caché para evitar errores de actualización)
+engine = UrbanDataEngine()
 
-engine = load_engine()
-
-# 2. SIDEBAR - CONTROLES
+# 3. SIDEBAR - CONTROLES
 st.sidebar.image("https://img.icons8.com/fluency/96/city.png", width=80)
 st.sidebar.title("Configuración de Análisis")
 st.sidebar.markdown("Ajuste los parámetros para la simulación térmica urbana.")
@@ -35,11 +31,11 @@ points = st.sidebar.select_slider(
 st.sidebar.divider()
 st.sidebar.info("Este dashboard utiliza datos sintéticos calibrados para demostrar capacidades de consultoría en resiliencia urbana.")
 
-# 3. PROCESAMIENTO DE DATOS
+# 4. PROCESAMIENTO DE DATOS
 data = engine.generate_thermal_data(selected_city, n_points=points)
 m = engine.get_metrics(data)
 
-# 4. HEADER Y KPIs
+# 5. HEADER Y KPIs
 st.title(f"🏙️ Thermos-3D: Resiliencia Térmica en {selected_city}")
 st.markdown("### Dashboard de Consultoría de Impacto Ambiental")
 
@@ -49,7 +45,7 @@ col2.metric("Pico Máximo Detectado", f"{m['max']:.1f} °C", delta="Zona Crític
 col3.metric("Albedo Medio Urbano", f"{m['albedo_med']:.2f}", help="Reflectividad: Valores < 0.20 indican alta absorción de calor.")
 col4.metric("Impacto Energético", f"+{m['energy_hike']:.1f}%", help="Aumento estimado en la demanda de climatización respecto a zona rural.")
 
-# 5. VISUALIZACIÓN GEOESPACIAL (MAPA DE CALOR)
+# 6. VISUALIZACIÓN GEOESPACIAL (MAPA DE CALOR)
 st.subheader("Análisis Espacial de Islas de Calor (UHI)")
 st.markdown("La intensidad del color representa la acumulación térmica en infraestructuras y superficies pavimentadas.")
 
@@ -82,7 +78,7 @@ st.pydeck_chart(pdk.Deck(
     layers=[layer]
 ))
 
-# 6. BLOQUE TÉCNICO Y EXPLICATIVO
+# 7. BLOQUE TÉCNICO Y EXPLICATIVO
 st.divider()
 col_left, col_right = st.columns(2)
 
@@ -103,14 +99,14 @@ with col_right:
     4. **Inseguridad Hídrica:** Aumento de la evaporación en depósitos urbanos y mayor demanda de riego.
     """)
 
-# 7. GRÁFICA DE DISTRIBUCIÓN
+# 8. GRÁFICA DE DISTRIBUCIÓN
 st.subheader("Distribución de Riesgo por Rangos Térmicos")
 bins = [0, 35, 40, 45, 100]
 labels = ['Seguro (<35°C)', 'Aviso (35-40°C)', 'Peligro (40-45°C)', 'Extremo (>45°C)']
 data['Rango'] = pd.cut(data['temperature'], bins=bins, labels=labels)
 st.bar_chart(data['Rango'].value_counts().reindex(labels))
 
-# 8. FOOTER (Fondo blanco, letra negra)
+# 9. FOOTER (Fondo blanco, letra negra)
 st.markdown(
     """
     <style>
