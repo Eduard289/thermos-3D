@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. INICIALIZAR MOTOR DE DATOS (Sin caché para evitar errores de actualización)
+# 2. INICIALIZAR MOTOR DE DATOS
 engine = UrbanDataEngine()
 
 # 3. SIDEBAR - CONTROLES
@@ -72,8 +72,9 @@ layer = pdk.Layer(
     ]
 )
 
+# AQUÍ ESTÁ EL CAMBIO AL MAPA OSCURO
 st.pydeck_chart(pdk.Deck(
-    map_style='mapbox://styles/mapbox/light-v10',
+    map_style='mapbox://styles/mapbox/dark-v10',
     initial_view_state=view_state,
     layers=[layer]
 ))
@@ -106,7 +107,7 @@ labels = ['Seguro (<35°C)', 'Aviso (35-40°C)', 'Peligro (40-45°C)', 'Extremo 
 data['Rango'] = pd.cut(data['temperature'], bins=bins, labels=labels)
 st.bar_chart(data['Rango'].value_counts().reindex(labels))
 
-# 9. FOOTER (Fondo blanco, letra negra)
+# 9. FOOTER 
 st.markdown(
     """
     <style>
@@ -124,7 +125,6 @@ st.markdown(
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         z-index: 1000;
     }
-    /* Espaciado para que el footer no tape el contenido */
     .main .block-container {
         padding-bottom: 50px;
     }
