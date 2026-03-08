@@ -72,9 +72,9 @@ layer = pdk.Layer(
     ]
 )
 
-# AQUÍ ESTÁ EL CAMBIO AL MAPA OSCURO
+# MAPA OSCURO NATIVO (Sin necesidad de API Key)
 st.pydeck_chart(pdk.Deck(
-    map_style='mapbox://styles/mapbox/dark-v10',
+    map_style='dark',
     initial_view_state=view_state,
     layers=[layer]
 ))
