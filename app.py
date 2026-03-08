@@ -52,7 +52,7 @@ st.markdown("La intensidad del color representa la acumulación térmica en infr
 view_state = pdk.ViewState(
     latitude=data['lat'].mean(),
     longitude=data['lon'].mean(),
-    zoom=4,
+    zoom=5,
     pitch=0
 )
 
